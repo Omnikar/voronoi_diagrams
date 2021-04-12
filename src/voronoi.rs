@@ -24,7 +24,10 @@ impl Point
     }
 }
 
-pub fn generate(width: u32, height: u32, point_count_range: Range<u32>, draw_points: bool, point_size: u32, output_path: &str) -> Result<(), Box<dyn std::error::Error>>
+pub fn generate(width: u32, height: u32,
+    point_count_range: Range<u32>, draw_points: bool, point_size: u32,
+    red_range: &Range<u32>, green_range: &Range<u32>, blue_range: &Range<u32>,
+    output_path: &str) -> Result<(), Box<dyn std::error::Error>>
 {
     let img: RgbImage = ImageBuffer::new(width, height);
     img.save(output_path)?;
@@ -46,7 +49,16 @@ pub fn generate(width: u32, height: u32, point_count_range: Range<u32>, draw_poi
         }
         for i in 2..5
         {
-            data[i] = rand::thread_rng().gen_range(0..256);
+            let color_range: &Range<u32> =
+            match i
+            {
+                2 => red_range,
+                3 => green_range,
+                4 => blue_range,
+                _ => &(0..256),
+            };
+            let color_range: Range<u32> = color_range.start..color_range.end;
+            data[i] = rand::thread_rng().gen_range(color_range).clamp(0, 255);
         }
 
         let pos: [u32; 2] = [data[0], data[1]];
