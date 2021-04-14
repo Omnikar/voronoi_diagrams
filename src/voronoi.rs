@@ -1,4 +1,6 @@
 use std::ops::Range;
+use std::io::prelude::*;
+use std::process::{Command, Stdio};
 
 use rand::Rng;
 use image::GenericImage;
@@ -27,6 +29,7 @@ impl Point
 pub fn generate(width: u32, height: u32,
     point_count_range: Range<u32>, draw_points: bool, point_size: u32,
     red_range: &Range<u32>, green_range: &Range<u32>, blue_range: &Range<u32>,
+    custom_color_generator: Option<String>,
     output_path: &str) -> Result<(), Box<dyn std::error::Error>>
 {
     let img: RgbImage = ImageBuffer::new(width, height);
@@ -39,6 +42,7 @@ pub fn generate(width: u32, height: u32,
         return Ok(());
     }
     let mut points: Vec<Point> = Vec::with_capacity(usize::from(point_count));
+
     for _ in 0..point_count
     {
         let mut data: [u32; 5] = [0; 5];
@@ -47,18 +51,58 @@ pub fn generate(width: u32, height: u32,
             let dim = if i == 0 { width } else { height };
             data[i] = rand::thread_rng().gen_range(0..dim);
         }
-        for i in 2..5
+        match custom_color_generator
         {
-            let color_range: &Range<u32> =
-            match i
+            None =>
             {
-                2 => red_range,
-                3 => green_range,
-                4 => blue_range,
-                _ => &(0..256),
-            };
-            let color_range: Range<u32> = color_range.start..color_range.end;
-            data[i] = rand::thread_rng().gen_range(color_range).clamp(0, 255);
+                for i in 2..5
+                {
+                    let color_range: &Range<u32> =
+                    match i
+                    {
+                        2 => red_range,
+                        3 => green_range,
+                        4 => blue_range,
+                        _ => &(0..256),
+                    };
+                    let color_range: Range<u32> = color_range.start..color_range.end;
+                    data[i] = rand::thread_rng().gen_range(color_range).clamp(0, 255);
+                }
+            },
+            Some(ref cmd) =>
+            {
+                let process =
+                match Command::new(cmd)
+                                .stdout(Stdio::piped())
+                                .spawn()
+                {
+                    Err(why) => panic!("couldn't spawn {}: {}", cmd, why),
+                    Ok(process) => process,
+                };
+
+                let mut s = String::new();
+                match process.stdout.unwrap().read_to_string(&mut s)
+                {
+                    Err(why) => panic!("couldn't read {} stdout: {}", cmd, why),
+                    Ok(_) =>
+                    {
+                        let num_s_v: Vec<&str> = s.trim().split(" ").collect();
+                        if num_s_v.len() != 3
+                        {
+                            panic!("incorrect number of outputs in {} stdout", cmd);
+                        }
+                        let mut num_v: Vec<u8> = Vec::new();
+                        for num_s in num_s_v.iter()
+                        {
+                            num_v.push(num_s.parse()?);
+                        }
+                        for i in 2..5
+                        {
+                            data[i] = num_v[i - 2] as u32;
+                        }
+                    },
+                }
+            }
         }
 
         let pos: [u32; 2] = [data[0], data[1]];

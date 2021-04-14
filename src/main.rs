@@ -67,6 +67,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
         None => blue_max = 256,
     }
 
+    let custom_color_generator = config.get("generator", "custom_color_generator");
+
     println!("Generating Voronoi diagram...");
 
     voronoi::generate(
@@ -74,6 +76,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>>
         point_count_min..point_count_max,
         draw_points, point_size,
         &(red_min..red_max), &(green_min..green_max), &(blue_min..blue_max),
+        custom_color_generator,
         &output_path)?;
 
     println!("Done!");
