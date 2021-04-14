@@ -65,7 +65,7 @@ pub fn generate(width: u32, height: u32,
                         4 => blue_range,
                         _ => &(0..256),
                     };
-                    let color_range: Range<u32> = color_range.start..color_range.end;
+                    let color_range: Range<u32> = color_range.clone();
                     data[i] = rand::thread_rng().gen_range(color_range).clamp(0, 255);
                 }
             },

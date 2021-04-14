@@ -1,6 +1,6 @@
 [package]
 name = "voronoi_diagrams"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Omnikar <Omnikar5@gmail.com>"]
 edition = "2018"
 
